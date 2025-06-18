@@ -1,1 +1,1 @@
-Multiplr CPU far memory access paths.
+Multiple CPU far memory access paths.
