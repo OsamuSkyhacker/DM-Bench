@@ -13,15 +13,15 @@ Note: The `multistream` build primarily prefetches UM arrays in multiple streams
 ### Mathematical Model & Algorithm
 - **Continuous equation**
   
-  ```math
-  \rho c \frac{\partial T}{\partial t} = \nabla \cdot (k \nabla T) + P 
-  ```
+```math
+\rho c \frac{\partial T}{\partial t} = \nabla \cdot (k \nabla T) + P 
+```
   where $T$ is temperature, $P$ power density, and $\rho,c,k$ are density, specific heat, and conductivity.
 - **Explicit Finite Difference (FDM)**
   Divide the chip into a $G\times G$ grid and use a 4-neighbour stencil:
-  ```math
-  T_{i,j} \leftarrow T_{i,j} + \kappa\,\Delta t/\Delta x^{2}\,[T_{i+1,j}+T_{i-1,j}+T_{i,j+1}+T_{i,j-1}-4T_{i,j}] + \text{power term} 
-  ```
+```math
+T_{i,j} \leftarrow T_{i,j} + \kappa\,\Delta t/\Delta x^{2}\,[T_{i+1,j}+T_{i-1,j}+T_{i,j+1}+T_{i,j-1}-4T_{i,j}] + \text{power term} 
+ ```
 - **Stability**: Requires $\kappa\Delta t /\Delta x^{2} \le 0.25$. Constants satisfy this.
 - **Boundary**: Convective cooling on chip edges is built-in; no user config needed.
 
