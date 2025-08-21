@@ -12,12 +12,17 @@ Note: The `multistream` build primarily prefetches UM arrays in multiple streams
 
 ### Mathematical Model & Algorithm
 - **Continuous equation**
-  $ \rho c \frac{\partial T}{\partial t} = \nabla \cdot (k \nabla T) + P $
-  where \(T\) is temperature, \(P\) power density, and \(\rho,c,k\) are density, specific heat, and conductivity.
+  
+  ```math
+  \rho c \frac{\partial T}{\partial t} = \nabla \cdot (k \nabla T) + P 
+  ```
+  where $T$ is temperature, $P$ power density, and $\rho,c,k$ are density, specific heat, and conductivity.
 - **Explicit Finite Difference (FDM)**
-  Divide the chip into a \(G\times G\) grid and use a 4-neighbour stencil:
-  $ T_{i,j} \leftarrow T_{i,j} + \kappa\,\Delta t/\Delta x^{2}\,[T_{i+1,j}+T_{i-1,j}+T_{i,j+1}+T_{i,j-1}-4T_{i,j}] + \text{power term} $
-- **Stability**: Requires \(\kappa\Delta t /\Delta x^{2} \le 0.25\). Constants satisfy this.
+  Divide the chip into a $G\times G$ grid and use a 4-neighbour stencil:
+  ```math
+  T_{i,j} \leftarrow T_{i,j} + \kappa\,\Delta t/\Delta x^{2}\,[T_{i+1,j}+T_{i-1,j}+T_{i,j+1}+T_{i,j-1}-4T_{i,j}] + \text{power term} 
+  ```
+- **Stability**: Requires $\kappa\Delta t /\Delta x^{2} \le 0.25$. Constants satisfy this.
 - **Boundary**: Convective cooling on chip edges is built-in; no user config needed.
 
 ### GPU Parallel Mapping
@@ -40,9 +45,9 @@ Hotspot uses plain ASCII float text, one value per line, row-major.
 
 | File | Role | Lines | Generator |
 |------|------|-------|-----------|
-| `temp_G`   | initial temperature (°C) | \(G^2\) | `data/inputGen/hotspotex.cpp` |
-| `power_G`  | power (W)               | \(G^2\) | `data/inputGen/hotspotver.cpp` |
-| `out.txt`  | final temperature       | \(G^2\) | program output |
+| `temp_G`   | initial temperature (°C) | $G^2$ | `data/inputGen/hotspotex.cpp` |
+| `power_G`  | power (W)               | $G^2$ | `data/inputGen/hotspotver.cpp` |
+| `out.txt`  | final temperature       | $G^2$ | program output |
 
 Generate large inputs:
 ```bash
@@ -75,7 +80,7 @@ make -C hotspot/Managed multistream
                           [AB dev|cpu] [RM dev|cpu] [PL dev|cpu] [PF dev|cpu]
 ```
 Arguments:
-- `<grid>`: grid size \(G\).
+- `<grid>`: grid size $G$.
 - `<pyramid_height>`: H (>0).
 - `<sim_time>`: total iterations.
 - UM switches (any combination): `AB` accessor, `RM` read-mostly, `PL` preferred location, `PF` prefetch.
