@@ -17,10 +17,10 @@ Note: No compile-time multi-stream switch (`MULTISTREAM`) is provided. `PF` in t
   \partial_t E_z = \frac{1}{\varepsilon}(\partial_x H_y - \partial_y H_x),\quad
   \partial_t H_x = -\frac{1}{\mu}\partial_y E_z,\quad
   \partial_t H_y =  \frac{1}{\mu}\partial_x E_z
-```math
+```
 - **Yee Grid & Explicit Difference**
-  Space-time is discretised into \(\Delta x,\Delta y,\Delta t\); electric (E) and magnetic (H) fields are staggered (Yee grid).
-- **Stability (Courant)**: Ensure \(c\Delta t \le 1/\sqrt{(1/\Delta x)^2+(1/\Delta y)^2}\). Safe factors match Rodinia.
+  Space-time is discretised into $\Delta x,\Delta y,\Delta t$; electric (E) and magnetic (H) fields are staggered (Yee grid).
+- **Stability (Courant)**: Ensure $c\Delta t \le 1/\sqrt{(1/\Delta x)^2+(1/\Delta y)^2}$. Safe factors match Rodinia.
 - **Boundary**: Simplified PEC — E field at boundaries forced to 0.
 
 ### GPU Parallel Mapping
