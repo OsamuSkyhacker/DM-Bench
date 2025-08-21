@@ -1,0 +1,9 @@
+./bfs ../bfs_data/graph16M.txt AB 0 PF 0
+
+
+; Note
+; 0.666667 GB 的默认开销
+; BFS 16M 实际显存0.88GB（UnManaged）
+
+; DummyCudaMalloc 22.45 GB，实际占用22.45+0.666667=23.116667GB = 24.00GB - 0.88GB = 23.12GB
+; 正好 100%
