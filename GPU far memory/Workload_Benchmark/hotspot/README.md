@@ -32,7 +32,13 @@ T_{i,j} \leftarrow T_{i,j} + \kappa\,\Delta t/\Delta x^{2}\,[T_{i+1,j}+T_{i-1,j}
 - **Multi-stream (`MULTISTREAM`)**: Create multiple CUDA streams to overlap data migration and computation.
 
 ### 4-Neighbour Stencil & `pyramid_height`
-[`diagram omitted`]
+````text
+    (i-1,j)
+       ↑
+(i,j-1) ← (i,j) → (i,j+1)
+       ↓
+    (i+1,j)
+````
 
 `pyramid_height = 1` uses immediate four neighbours; `H>1` expands dependency outward H layers.
 
