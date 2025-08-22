@@ -1,0 +1,75 @@
+gpu:
+  id: 0                 # 默认 GPU ID（可在 plan.yaml 覆盖）
+  reserve_mb: 1024      # Sctx：驱动/上下文/碎片安全预留
+  offload_bias_mb: 0    # Δ：偏差修正
+  run_reserve_mb: 512   # Sr：启动 hog 时即时保留
+
+workloads:
+  bfs:
+    execs:
+      unmanaged: "${WB_ROOT}/BFS/UnManaged/bfs"
+      managed:   "${WB_ROOT}/BFS/Managed/bfs"
+    baseline_unmanaged_vram_mb: 3400
+    supports: {um: true, ab: true, pl: true, rm: true, pf: true}
+    args:
+      input: "${WB_ROOT}/BFS/bfs_data/graph16M.txt"
+      fixed: []
+    parse:
+      sec_regex: "Total elapsed time: ([0-9]+\\.[0-9]+) s"
+
+  backprop:
+    execs:
+      unmanaged: "${WB_ROOT}/backprop/UnManaged/backprop"
+      managed:   "${WB_ROOT}/backprop/Managed/backprop"
+    baseline_unmanaged_vram_mb: 6200
+    supports: {um: true, ab: true, pl: true, rm: true, pf: true}
+    args:
+      fixed: ["1048560", "2048"]
+    parse:
+      sec_regex: "Total elapsed time: ([0-9]+\\.[0-9]+) s"
+
+  fdtd2d:
+    execs:
+      unmanaged: "${WB_ROOT}/FDTD-2D/UnManaged/fdtd2d"
+      managed:   "${WB_ROOT}/FDTD-2D/Managed/fdtd2d"
+    baseline_unmanaged_vram_mb: 3000
+    supports: {um: true, ab: true, pl: true, rm: true, pf: true}
+    args:
+      fixed: []
+    parse:
+      sec_regex: "Total elapsed time: ([0-9]+\\.[0-9]+) s"
+
+  hotspot:
+    execs:
+      unmanaged: "${WB_ROOT}/hotspot/UnManaged/hotspot"
+      managed:   "${WB_ROOT}/hotspot/Managed/hotspot"
+    baseline_unmanaged_vram_mb: 3500
+    supports: {um: true, ab: true, pl: true, rm: true, pf: true}
+    args:
+      fixed: ["1024", "1", "60", "${WB_ROOT}/hotspot/data/temp_1024", "${WB_ROOT}/hotspot/data/power_1024", "hotspot_out.txt"]
+    parse:
+      sec_regex: "Total elapsed time: ([0-9]+\\.[0-9]+) s"
+
+  nw:
+    execs:
+      unmanaged: "${WB_ROOT}/nw/UnManaged/needle"
+      managed:   "${WB_ROOT}/nw/Managed/needle"
+    baseline_unmanaged_vram_mb: 2500
+    supports: {um: true, ab: true, pl: true, rm: true, pf: true}
+    args:
+      fixed: ["2048", "10"]
+    parse:
+      sec_regex: "Total wall time: ([0-9]+\\.[0-9]+) sec"
+
+  pathfinder:
+    execs:
+      unmanaged: "${WB_ROOT}/pathfinder/UnManaged/pathfinder"
+      managed:   "${WB_ROOT}/pathfinder/Managed/pathfinder"
+    baseline_unmanaged_vram_mb: 2600
+    supports: {um: true, ab: true, pl: true, rm: true, pf: true}
+    args:
+      fixed: ["16384", "16384", "1"]
+    parse:
+      sec_regex: "Total elapsed time: ([0-9]+\\.[0-9]+) s"
+
+

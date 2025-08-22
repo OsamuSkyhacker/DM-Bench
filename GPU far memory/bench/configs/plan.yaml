@@ -1,0 +1,26 @@
+gpu_id: 0
+nodes:
+  local:  {membind: 0, cpunodebind: 0}
+  remote: {membind: 1, cpunodebind: 0}
+  pmem:   {membind: 2, cpunodebind: 0}
+
+ratios: [0.3, 0.7, 1.0, 1.5, 2.0]
+workloads: [bfs, backprop]
+modes: [unmanaged, um]
+
+um_profiles:
+  - name: um_base
+    pf: false
+    ab: none
+    pl: none
+    rm: none
+  - name: um_pf
+    pf: true
+  - name: um_ab
+    ab: gpu0
+  - name: um_pl_cpu
+    pl: cpu
+  - name: um_rm
+    rm: gpu0
+
+
