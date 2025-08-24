@@ -14,7 +14,7 @@ Note: The `multistream` in this implementation is mainly for multi-stream prefet
 - **Continuous equation**  
 
 ```math
-\rho c \frac{\partial T}{\partial t} = \nabla \cdot (k \nabla T) + P $$
+\rho c \frac{\partial T}{\partial t} = \nabla \cdot (k \nabla T) + P
 ```
 
   where $T$ is temperature, $P$ is local power, and $\rho,c,k$ are density, specific heat, and thermal conductivity.
