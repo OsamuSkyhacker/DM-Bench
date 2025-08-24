@@ -1,1 +1,1 @@
-./bfs ../bfs_data/graph16M.txt
+./bfs ../bfs_data/graph64M.txt
