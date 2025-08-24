@@ -19,8 +19,8 @@
 //#define NY 2048
 
 #define tmax 5
-#define NX 1200
-#define NY 1200
+#define NX 23168
+#define NY 23168
 
 /* Thread block dimensions */
 #define DIM_THREAD_BLOCK_X 32
