@@ -1,1 +1,1 @@
-./hotspot 1024 2 8 ../data/temp_1024 ../data/power_1024 output.out
+./hotspot 8192 1 60 ../data/temp_8192 ../data/power_8192 /dev/null

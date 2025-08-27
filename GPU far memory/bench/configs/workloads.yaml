@@ -1,18 +1,18 @@
 gpu:
   id: 0                 # 默认 GPU ID（可在 plan.yaml 覆盖）
-  reserve_mb: 1024      # Sctx：驱动/上下文/碎片安全预留
-  offload_bias_mb: 0    # Δ：偏差修正
-  run_reserve_mb: 512   # Sr：启动 hog 时即时保留
+  task_overhead_mb: 251 # O：每个进程固定开销
+  global_task_mb: 3     # F_task：GPU有任务即存在的全局开销
+  free_adjust_mb: 0     # 对 Free0 的修正量（开发者可配置）：实际可用空闲 ≈ Free0 - free_adjust_mb
 
 workloads:
   bfs:
     execs:
       unmanaged: "${WB_ROOT}/BFS/UnManaged/bfs"
       managed:   "${WB_ROOT}/BFS/Managed/bfs"
-    baseline_unmanaged_vram_mb: 3400
+    baseline_payload_mb: 2500
     supports: {um: true, ab: true, pl: true, rm: true, pf: true}
     args:
-      input: "${WB_ROOT}/BFS/bfs_data/graph16M.txt"
+      input: "${WB_ROOT}/BFS/bfs_data/graph64M.txt"
       fixed: []
     parse:
       sec_regex: "Total elapsed time: ([0-9]+\\.[0-9]+) s"
@@ -21,10 +21,10 @@ workloads:
     execs:
       unmanaged: "${WB_ROOT}/backprop/UnManaged/backprop"
       managed:   "${WB_ROOT}/backprop/Managed/backprop"
-    baseline_unmanaged_vram_mb: 6200
+    baseline_payload_mb: 10248
     supports: {um: true, ab: true, pl: true, rm: true, pf: true}
     args:
-      fixed: ["1048560", "2048"]
+      fixed: ["1048560", "1280"]
     parse:
       sec_regex: "Total elapsed time: ([0-9]+\\.[0-9]+) s"
 
@@ -32,7 +32,7 @@ workloads:
     execs:
       unmanaged: "${WB_ROOT}/FDTD-2D/UnManaged/fdtd2d"
       managed:   "${WB_ROOT}/FDTD-2D/Managed/fdtd2d"
-    baseline_unmanaged_vram_mb: 3000
+    baseline_payload_mb: 6146
     supports: {um: true, ab: true, pl: true, rm: true, pf: true}
     args:
       fixed: []
@@ -43,10 +43,10 @@ workloads:
     execs:
       unmanaged: "${WB_ROOT}/hotspot/UnManaged/hotspot"
       managed:   "${WB_ROOT}/hotspot/Managed/hotspot"
-    baseline_unmanaged_vram_mb: 3500
+    baseline_payload_mb: 768
     supports: {um: true, ab: true, pl: true, rm: true, pf: true}
     args:
-      fixed: ["1024", "1", "60", "${WB_ROOT}/hotspot/data/temp_1024", "${WB_ROOT}/hotspot/data/power_1024", "hotspot_out.txt"]
+      fixed: ["8192", "1", "60", "${WB_ROOT}/hotspot/data/temp_8192", "${WB_ROOT}/hotspot/data/power_8192", "/dev/null"]
     parse:
       sec_regex: "Total elapsed time: ([0-9]+\\.[0-9]+) s"
 
@@ -54,10 +54,10 @@ workloads:
     execs:
       unmanaged: "${WB_ROOT}/nw/UnManaged/needle"
       managed:   "${WB_ROOT}/nw/Managed/needle"
-    baseline_unmanaged_vram_mb: 2500
+    baseline_payload_mb: 8196
     supports: {um: true, ab: true, pl: true, rm: true, pf: true}
     args:
-      fixed: ["2048", "10"]
+      fixed: ["32768", "10"]
     parse:
       sec_regex: "Total wall time: ([0-9]+\\.[0-9]+) sec"
 
@@ -65,10 +65,10 @@ workloads:
     execs:
       unmanaged: "${WB_ROOT}/pathfinder/UnManaged/pathfinder"
       managed:   "${WB_ROOT}/pathfinder/Managed/pathfinder"
-    baseline_unmanaged_vram_mb: 2600
+    baseline_payload_mb: 8194
     supports: {um: true, ab: true, pl: true, rm: true, pf: true}
     args:
-      fixed: ["16384", "16384", "1"]
+      fixed: ["50000", "429495", "100"]
     parse:
       sec_regex: "Total elapsed time: ([0-9]+\\.[0-9]+) s"
 

@@ -8,7 +8,7 @@
 #define DEVICE 0
 #define HALO 1 // halo width along one direction when advancing to the next iteration
 
-#define BENCH_PRINT
+// #define BENCH_PRINT
 
 void run(int argc, char** argv);
 
@@ -66,25 +66,25 @@ init(int argc, char** argv)
 
     }
 
-#ifdef BENCH_PRINT
 
-    for (int i = 0; i < rows; i++)
 
-    {
+//     for (int i = 0; i < rows; i++)
 
-        for (int j = 0; j < cols; j++)
+//     {
 
-        {
+//         for (int j = 0; j < cols; j++)
 
-            printf("%d ",wall[i][j]) ;
+//         {
 
-        }
+//             printf("%d ",wall[i][j]) ;
 
-        printf("\n") ;
+//         }
 
-    }
+//         printf("\n") ;
 
-#endif
+//     }
+
+
 }
 
 void 

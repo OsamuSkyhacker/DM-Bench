@@ -5,7 +5,7 @@ nodes:
   pmem:   {membind: 2, cpunodebind: 0}
 
 ratios: [0.3, 0.7, 1.0, 1.5, 2.0]
-workloads: [bfs, backprop]
+workloads: [backprop]
 modes: [unmanaged, um]
 
 um_profiles:

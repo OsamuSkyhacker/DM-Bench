@@ -15,4 +15,5 @@
 ./graphgen 4194304 4M
 ./graphgen 8388608 8M
 ./graphgen 16777216 16M
-
+./graphgen 33554432 32M
+./graphgen 67108864 64M

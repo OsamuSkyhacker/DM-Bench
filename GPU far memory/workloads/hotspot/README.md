@@ -64,12 +64,22 @@ Hotspot uses **plain ASCII floating-point text**; one value per line, stored in 
 | `power_1024` | Power (W/cell) | `G×G` | `data/inputGen/hotspotver.cpp` |
 | `out.txt`    | Final temperature (°C) | `G×G` | Program output |
 
-Generate large inputs:
+Input generators (hotspotex / hotspotver):
+- Located at `hotspot/data/inputGen/`, used to expand smaller matrices (64 or 1024) to larger sizes.
+- Selection is controlled by header files (e.g., `64_128.h`, `1024_8192.h`). The programs ignore command-line args and always use the macros defined in the included header:
+  - `IN_SIZE` (64 or 1024), `MULTIPLIER` (2/4/8/16), `OUT_SIZE = IN_SIZE × MULTIPLIER`
+  - `TEMP_IN/POWER_IN` → input file names (e.g., `temp_1024`/`power_1024`)
+  - `TEMP_OUT/POWER_OUT` → output file names (e.g., `temp_8192`/`power_8192`)
+- `hotspotex`: generates `TEMP_OUT/POWER_OUT` by tiling each input value into an `x×x` block (`x=MULTIPLIER`).
+- `hotspotver`: verifies that each output element equals the corresponding tiled source value.
+
+Recommended (G=8192) generation:
 ```bash
 cd hotspot/data/inputGen
-make                      # build hotspotex, hotspotver
-./hotspotex 18900 temp_18900   # temperature matrix
-./hotspotver 18900 power_18900 # power matrix
+# Edit hotspotex.cpp and hotspotver.cpp to include:  #include "1024_8192.h"
+make                # build hotspotex, hotspotver
+./hotspotex         # writes temp_8192 and power_8192
+./hotspotver        # verifies temp_8192 / power_8192
 ```
 
 
@@ -91,7 +101,10 @@ make -C hotspot/Managed multistream
 
 
 ## Run
+
 ### Managed version
+
+Command:
 ```bash
 ./hotspot/Managed/hotspot <grid> <pyramid_height> <sim_time> \
                           <temp_file> <power_file> <output_file> \
@@ -107,12 +120,33 @@ make -C hotspot/Managed multistream
   - `PF dev|cpu`: `cudaMemPrefetchAsync`; in single-stream build runs in default stream order then synchronizes; `dev` is device id (e.g., `0`), `cpu` is host
 - If built with the `multistream` target, prefetch runs on multiple streams and can overlap with kernel execution (kernel still launched on default stream).
 
+Examples:
+```bash
+# Recommended (avoid large file I/O): write to /dev/null
+./hotspot/Managed/hotspot 8192 1 60 ../data/temp_8192 ../data/power_8192 /dev/null AB 0 PF 0
+
+# Legacy large-scale example (writes full output file)
+./hotspot/Managed/hotspot 18900 1 60 <temp_18900> <power_18900> out.txt AB 0 PF 0
+```
+
 ### UnManaged version
+
+Command:
 
 ```bash
 ./hotspot/UnManaged/hotspot <grid> <pyramid_height> <sim_time> \
                             <temp_file> <power_file> <output_file>
 ```
+Examples:
+```bash
+# Recommended (avoid large file I/O): write to /dev/null
+./hotspot/UnManaged/hotspot 8192 1 60 ../data/temp_8192 ../data/power_8192 /dev/null
+
+# Legacy large-scale example (writes full output file)
+./hotspot/UnManaged/hotspot 18900 1 60 <temp_18900> <power_18900> out.txt
+```
+
+
 
 ## Program Output
 - Stdout: At startup prints total memory size (MiB/GiB); at the end prints `Total elapsed time: X.XXX s`.
@@ -124,6 +158,7 @@ Let `grid_rows = grid_cols = G`, `size = G²`. Main GPU arrays:
 - VRAM bytes: `Mem_bytes ≈ 4 × (2·size + size) = 12·G²`  
   GiB ≈ `Mem_bytes / 2^30`.
 - Example: 4 GiB → `G ≈ 18 900`; formula: `G ≈ 9 486 × √Mem_GiB`.
+ - For `G = 8192`, VRAM ≈ `12 · 8192² / 2^30` ≈ 0.75 GiB (recommend ≥ 1 GiB headroom).
 
 The program prints grid/block partitioning and total elapsed time at startup to help verify configuration.
 

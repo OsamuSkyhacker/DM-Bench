@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# 按 B/R 口径计算需要占用的显存（MB），并按当前空闲裁剪
-# calc_hog_mb T_mb B_mb R Sctx_mb Delta_mb Free0_mb Sr_mb
-calc_hog_mb() {
-  awk -v T="$1" -v B="$2" -v R="$3" -v S="$4" -v D="$5" -v F0="$6" -v Sr="$7" '
+# 基于实时 Free0 的闭式解（支持修正项 free_adjust_mb）：
+# F_task + (B_algo/R + O) + (H_bytes + O) = (Free0 - FreeAdj)
+# 其中 H_bytes = 1024 * x_GB ⇒ x_GB = (Free0 - FreeAdj - F_task - (B_algo/R + O) - O) / 1024
+# 返回 x_GB（保留三位小数，且不小于 0）
+calc_hog_gb_from_free0() { # Free0_mb FreeAdj_mb B_algo_mb R task_overhead_mb global_task_mb
+  awk -v F0="$1" -v FA="$2" -v B="$3" -v R="$4" -v O="$5" -v FT="$6" '
     BEGIN{
-      free_target = B / R + S + D;
-      H = T - free_target; if (H < 0) H = 0;
-      maxH = F0 - Sr; if (maxH < 0) maxH = 0;
-      if (H > maxH) H = maxH;
-      printf "%.0f\n", H;
+      num = (F0 - FA) - FT - (B / R + O) - O;
+      x = num / 1024.0;
+      if (x < 0) x = 0;
+      printf "%.3f\n", x;
     }'
 }
 
