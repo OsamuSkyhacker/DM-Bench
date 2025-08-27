@@ -74,7 +74,7 @@ main( int argc, char** argv)
   double __t0 = gettime();
   runTest( argc, argv);
   double __t1 = gettime();
-  printf("Total wall time: %.6f sec\n", __t1 - __t0);
+  printf("Total wall time: %.6f seconds\n", __t1 - __t0);
 
   return EXIT_SUCCESS;
 }

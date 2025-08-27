@@ -274,6 +274,6 @@ int main()
 	free(hz_outputFromGpu);
 
     double t_end = wall_time();
-    printf("Total elapsed time: %.3f s\n", t_end - t_start);
+    printf("Total elapsed time: %.3f seconds\n", t_end - t_start);
     return 0;
 }

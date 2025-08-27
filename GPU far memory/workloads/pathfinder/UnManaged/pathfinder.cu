@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <time.h>
 #include <assert.h>
+#include <cuda_runtime.h>
+#include <sys/time.h>
 
 #define BLOCK_SIZE 256
 #define STR_SIZE 256
@@ -19,6 +21,11 @@ int* result;
 #define M_SEED 9
 int pyramid_height;
 
+static double wall_time()
+{
+    struct timeval tv; gettimeofday(&tv, NULL);
+    return tv.tv_sec + tv.tv_usec * 1e-6;
+}
 
 void
 init(int argc, char** argv)
@@ -208,7 +215,10 @@ int main(int argc, char** argv)
     cudaGetDeviceCount(&num_devices);
     if (num_devices > 1) cudaSetDevice(DEVICE);
 
+    double t_start = wall_time();
     run(argc,argv);
+    double t_end = wall_time();
+    printf("Total elapsed time: %.3f seconds\n", t_end - t_start);
 
     return EXIT_SUCCESS;
 }

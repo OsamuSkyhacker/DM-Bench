@@ -4,7 +4,7 @@ nodes:
   remote: {membind: 1, cpunodebind: 0}
   pmem:   {membind: 2, cpunodebind: 0}
 
-ratios: [0.3, 0.7, 1.0, 1.5, 2.0]
+ratios: [1.5]
 workloads: [backprop]
 modes: [unmanaged, um]
 
@@ -23,4 +23,7 @@ um_profiles:
   - name: um_rm
     rm: gpu0
 
+# ratios: [0.3]
+# workloads: [backprop]
+# modes: [unmanaged]
 

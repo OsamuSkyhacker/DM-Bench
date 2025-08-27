@@ -98,6 +98,6 @@ char *argv[];
   bpnn_initialize(seed);
   backprop_face();
   double t_end = wall_time();
-  printf("Total elapsed time: %.3f s\n", t_end - t_start);
+  printf("Total elapsed time: %.3f seconds\n", t_end - t_start);
   exit(0);
 }

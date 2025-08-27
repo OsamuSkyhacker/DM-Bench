@@ -14,6 +14,19 @@ start_hog() { # <hog_bin> <gpu_id> <hog_mb>
 stop_hog() { # <pid>
   local pid="$1"
   kill -TERM "$pid" 2>/dev/null || true
+  for _ in 1 2 3; do
+    if kill -0 "$pid" 2>/dev/null; then sleep 0.3; else return 0; fi
+  done
+  kill -KILL "$pid" 2>/dev/null || true
+}
+
+stop_hog_for_gpu() { # <gpu_id>
+  local gpu_id="$1"
+  local pids
+  pids=$(pgrep -af "gpu_mem_hog" | awk -v gid="$gpu_id" '$NF==gid {print $1}')
+  for pid in $pids; do
+    stop_hog "$pid"
+  done
 }
 
 wait_hog_ready() { # <gpu_id> <timeout_sec>

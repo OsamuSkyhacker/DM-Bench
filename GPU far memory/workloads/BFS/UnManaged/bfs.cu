@@ -59,7 +59,7 @@ int main( int argc, char** argv)
     double t_start = wall_time();
     BFSGraph( argc, argv);
     double t_end = wall_time();
-    printf("Total elapsed time: %.3f s\n", t_end - t_start);
+    printf("Total elapsed time: %.3f seconds\n", t_end - t_start);
 }
 
 void Usage(int argc, char**argv){

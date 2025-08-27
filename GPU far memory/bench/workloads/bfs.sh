@@ -42,14 +42,16 @@ run() {
     echo "unsupported"; exit 3
   fi
 
-  # 执行并将秒转毫秒打印一行 "xxx.xxx ms" 供上层抓取
-  out=$("${cmd[@]}" 2>/dev/null || true)
-  sec=$(printf "%s\n" "$out" | grep -Eo 'Total elapsed time: [0-9]+\.[0-9]+ s' | awk '{print $4}')
-  if [[ -n "$sec" ]]; then
-    awk -v s="$sec" 'BEGIN{printf "%.3f ms\n", s*1000.0}'
-  else
-    # 若程序自身已输出 ms，则透传第一处
-    printf "%s\n" "$out" | grep -Eo '[0-9]+\.[0-9]+ ms' | head -n1 || true
+  out=("$(${cmd[@]} 2>&1 || true)")
+  match=$(printf "%s\n" "${out[@]}" | grep -Eo '([0-9]+(\.[0-9]+)?) (ms|s|sec|seconds)' | head -n1 || true)
+  if [[ -n "${match:-}" ]]; then
+    val=$(printf "%s" "$match" | awk '{print $1}')
+    unit=$(printf "%s" "$match" | awk '{print $2}')
+    if [[ "$unit" == "ms" ]]; then
+      awk -v v="$val" 'BEGIN{printf "%.3f ms\n", v+0.0}'
+    else
+      awk -v v="$val" 'BEGIN{printf "%.3f ms\n", v*1000.0}'
+    fi
   fi
 }
 

@@ -1,18 +1,38 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# numactl 包装
+# numactl 包装（若系统无 numactl 则直接返回原命令）
 numa_wrap() {
   local membind="$1"; shift
   local cpubind="$1"; shift
   local cmd="$*"
-  echo "numactl --membind=${membind} --cpunodebind=${cpubind} ${cmd}"
+  if command -v numactl >/dev/null 2>&1; then
+    echo "numactl --membind=${membind} --cpunodebind=${cpubind} ${cmd}"
+  else
+    echo "$cmd"
+  fi
 }
 
-# 抓取 "xx.xx ms"，失败返回空
+# 简单调试输出
+debug_log() {
+  if [[ "${BENCH_DEBUG:-0}" == "1" ]]; then
+    echo "[debug] $*" >&2
+  fi
+}
+
+# 抓取 "xx.xx ms"，失败返回空；不屏蔽 stderr，便于调试
 grab_ms() {
   local cmd="$1"
-  ${SHELL:-/bin/bash} -lc "$cmd" 2>/dev/null | grep -Eo '[0-9]+\.[0-9]+ ms' | awk '{print $1}' || true
+  debug_log "exec: $cmd"
+  ${SHELL:-/bin/bash} -lc "$cmd" | grep -Eo '[0-9]+\.[0-9]+ ms' | awk '{print $1}' || true
+}
+
+# 运行命令并将全部输出追加到日志，同时抽取 ms 值
+run_and_capture_ms() { # <cmd_string> <log_file>
+  local cmd="$1"; shift
+  local log="$1"
+  debug_log "exec(logged): $cmd -> $log"
+  ${SHELL:-/bin/bash} -lc "$cmd" 2>&1 | tee -a "$log" | grep -Eo '[0-9]+\.[0-9]+ ms' | awk '{print $1}' || true
 }
 
 # 简单 CSV 写入
