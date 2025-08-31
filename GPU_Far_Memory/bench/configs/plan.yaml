@@ -4,7 +4,7 @@ nodes:
   remote: {membind: 1, cpunodebind: 0}
   pmem:   {membind: 2, cpunodebind: 0}
 
-ratios: [0.3, 0.7, 1.0, 1.5, 2.0]
+ratios: [1.0, 1.3, 1.7, 2.0]
 workloads: [backprop] # backprop, bfs, fdtd2d, hotspot, nw, pathfinder
 modes: [unmanaged, um] # unmanaged, um
 

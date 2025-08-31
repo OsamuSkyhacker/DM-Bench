@@ -162,6 +162,11 @@ x_GB = (Free0 - FreeAdj - F_task - (B_algo / R + O) - O) / 1024
 - `x_GB` is converted back to MB when passed to `gpu_mem_hog`.
 - Example: `Free0=12000, FreeAdj=0, F_task=3, B_algo=10248, R=1.0, O=251` → `x_GB ≈ 1.261`.
 
+Why ratios > 1.0 are meaningful
+- The hog method is a practical trick: it reduces the free VRAM externally, without changing the workload’s own working set. When the oversubscription ratio R ≤ 1.0, the effective free VRAM after hogging is still ≥ B_algo (plus overheads), so the entire working set can reside on the GPU. In this regime, UM will not be forced to migrate pages, and Unmanaged also fits; runtimes are therefore close to baseline.
+- Only when R > 1.0 does the effective free VRAM become < B_algo (plus overheads). Unmanaged commonly OOMs (as noted), while UM triggers on-demand migrations/page faults; this is where far-memory behavior and performance differences appear and the experiment becomes meaningful.
+- Recommendation: choose R > 1.0 for far-memory studies; use 0 < R ≤ 1.0 mainly for sanity checks or environment validation.
+
 ## Troubleshooting
 - UM not executed: ensure `modes` contains `um` and `um_profiles` is non-empty; the initial debug output should list profile names. Without PyYAML/yq, only inline `nodes/um_profiles` are supported.
 - Node parsing failure: install PyYAML or `yq`; or write `nodes` in inline form `{membind: N, cpunodebind: M}`.
@@ -181,7 +186,7 @@ nodes:
   pmem:   {membind: 2, cpunodebind: 0}
 ```
 - Only explicitly declared labels will be executed.
-- ratios: list of oversub ratios (float or integer), e.g., `[0.3, 0.7, 1.0, 1.5, 2.0]`.
+- ratios: list of oversub ratios (float or integer), e.g., `[1.0, 1.3, 1.7, 2.0]`.
 - workloads: names must match `workloads.yaml.workloads.<name>` exactly.
 - modes: `unmanaged` and/or `um`.
   - UM combinations are executed only when `um` is included and `um_profiles` is non-empty.
