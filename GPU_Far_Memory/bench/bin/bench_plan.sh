@@ -196,6 +196,66 @@ PY
   ' "$PLAN" || true)
 }
 
+# 解析 workloads.yaml: 获取 args.input（若存在）
+get_wl_input() { # <wy_file> <wl>
+  local file="$1"; local wl="$2"; local out=""
+  out=$(python3 - "$file" "$wl" <<'PY' || true
+import sys
+try:
+  import yaml
+except Exception:
+  sys.exit(1)
+fn, wl = sys.argv[1], sys.argv[2]
+with open(fn,'r') as f:
+  d = yaml.safe_load(f) or {}
+w = (d.get('workloads') or {}).get(wl) or {}
+args = w.get('args') or {}
+val = args.get('input','')
+if val is None:
+  val = ''
+print(val)
+PY
+  )
+  if [[ -n "${out:-}" ]]; then echo "$out"; return 0; fi
+  if command -v yq >/dev/null 2>&1; then
+    yq -r ".workloads.$wl.args.input // \"\"" "$file" 2>/dev/null || true
+  else
+    grep -A16 -E "^\s*$wl:" "$file" | grep -E "^\s*input:" | sed -E 's/^[^:]+:\s*//' | tr -d '"' | head -n1 || true
+  fi
+}
+
+# 解析 workloads.yaml: 获取 args.fixed（若存在，拼接为空格分隔一行）
+get_wl_fixed() { # <wy_file> <wl>
+  local file="$1"; local wl="$2"; local out=""
+  out=$(python3 - "$file" "$wl" <<'PY' || true
+import sys
+try:
+  import yaml
+except Exception:
+  sys.exit(1)
+fn, wl = sys.argv[1], sys.argv[2]
+with open(fn,'r') as f:
+  d = yaml.safe_load(f) or {}
+w = (d.get('workloads') or {}).get(wl) or {}
+args = w.get('args') or {}
+fixed = args.get('fixed') or []
+if isinstance(fixed, list):
+  print(' '.join(str(x) for x in fixed))
+PY
+  )
+  if [[ -n "${out:-}" ]]; then echo "$out"; return 0; fi
+  if command -v yq >/dev/null 2>&1; then
+    yq -r ".workloads.$wl.args.fixed[]" "$file" 2>/dev/null | tr '\n' ' ' || true
+  else
+    # 仅支持简化：单行 [a,b,c]
+    local line
+    line=$(grep -A16 -E "^\s*$wl:" "$file" | grep -E "^\s*fixed:" | head -n1 || true)
+    if [[ -n "${line:-}" ]]; then
+      echo "$line" | sed -E 's/.*\[(.*)\].*/\1/' | tr ',' ' ' | tr -d '"' | tr -s ' '
+    fi
+  fi
+}
+
 # 读取 plan 关键字段
 gpu_id="$(parse_scalar "$PLAN" "gpu_id")"; gpu_id="${gpu_id:-0}"
 read -r -a ratios <<<"$(parse_list "$PLAN" "ratios" | tr -s ' ')"
@@ -236,11 +296,13 @@ for wl in "${workloads[@]}"; do
   Over=$(grep -E '^\s*task_overhead_mb:' "$WY" | awk -F: '{gsub(/ /,""); print $2}')
   GTask=$(grep -E '^\s*global_task_mb:' "$WY" | awk -F: '{gsub(/ /,""); print $2}')
   FreeAdj=$(grep -E '^\s*free_adjust_mb:' "$WY" | awk -F: '{gsub(/ /,""); print $2}')
+  wl_input="$(get_wl_input "$WY" "$wl" | sed 's/#.*$//')"
+  wl_fixed="$(get_wl_fixed "$WY" "$wl" | sed 's/#.*$//')"
   B=$(printf "%s" "$B" | sed 's/#.*$//')
   Over=$(printf "%s" "$Over" | sed 's/#.*$//')
   GTask=$(printf "%s" "$GTask" | sed 's/#.*$//')
   FreeAdj=$(printf "%s" "$FreeAdj" | sed 's/#.*$//')
-  debug_log "wl=$wl B=$B Over=$Over GTask=$GTask FreeAdj=$FreeAdj"
+  debug_log "wl=$wl B=$B Over=$Over GTask=$GTask FreeAdj=$FreeAdj input=${wl_input:-<none>} fixed=${wl_fixed:-<none>}"
 
   ts=$(date +%Y%m%d_%H%M%S)
   outdir="$ROOT/bench/results/$wl/$ts"
@@ -279,6 +341,8 @@ for wl in "${workloads[@]}"; do
       # unmanaged
       if [[ $do_unmanaged -eq 1 ]]; then
         cmd_un="bash $ROOT/bench/workloads/${wl}.sh run --mode unmanaged --gpu $gpu_id"
+        if [[ -n "${wl_input:-}" ]]; then cmd_un+=" --input \"$wl_input\""; fi
+        if [[ -n "${wl_fixed:-}" ]]; then cmd_un+=" --fixed-args \"$wl_fixed\""; fi
         log_un="$outdir/${wl}.${tag}.unmanaged.log"
         # 运行元信息
         {
@@ -286,6 +350,7 @@ for wl in "${workloads[@]}"; do
           echo "[meta] wl=$wl mode=unmanaged node=$tag membind=$membind cpunodebind=$cpubind gpu_id=$gpu_id"
           echo "[meta] ratio=$r Free0=$Free0 FreeAdj=$FreeAdj B=$B O=$Over GTask=$GTask"
           echo "[meta] hog_gb=$x hog_mb=$x_mb HOG_BIN=$HOG_BIN hog_pid=${pid:-}"
+          echo "[meta] input=${wl_input:-} fixed=${wl_fixed:-}"
         } >> "$log_un"
         cap_un="$outdir/tmp.unmanaged.${tag}.txt"
         ms_un=$(run_and_capture_ms "$(numa_wrap "$membind" "$cpubind" "$cmd_un")" "$log_un" "$cap_un")
@@ -309,6 +374,8 @@ for wl in "${workloads[@]}"; do
           if [[ "$_rm" != "none" && -n "$_rm" ]]; then extra_args+=" --um-rm $_rm"; fi
 
           cmd_um="bash $ROOT/bench/workloads/${wl}.sh run --mode um --gpu $gpu_id$extra_args"
+          if [[ -n "${wl_input:-}" ]]; then cmd_um+=" --input \"$wl_input\""; fi
+          if [[ -n "${wl_fixed:-}" ]]; then cmd_um+=" --fixed-args \"$wl_fixed\""; fi
           log_um="$outdir/${wl}.${tag}.${prof}.log"
           {
             echo "[time] $(date -Ins)"
@@ -316,6 +383,7 @@ for wl in "${workloads[@]}"; do
             echo "[meta] ratio=$r Free0=$Free0 FreeAdj=$FreeAdj B=$B O=$Over GTask=$GTask"
             echo "[meta] hog_gb=$x hog_mb=$x_mb HOG_BIN=$HOG_BIN hog_pid=${pid:-}"
             echo "[meta] pf=${UM_PF[$prof]:-false} ab=$_ab pl=$_pl rm=$_rm"
+            echo "[meta] input=${wl_input:-} fixed=${wl_fixed:-}"
           } >> "$log_um"
           cap_um="$outdir/tmp.um.${tag}.${prof}.txt"
           ms_um=$(run_and_capture_ms "$(numa_wrap "$membind" "$cpubind" "$cmd_um")" "$log_um" "$cap_um")
