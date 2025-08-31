@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# 路径与环境兜底
+HERE="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$HERE/../.." && pwd)"
+WB_ROOT="${WB_ROOT:-$ROOT/workloads}"
+export WB_ROOT
+
 # pathfinder 统一接口封装
 # 用法：run --mode <unmanaged|um> --gpu <id> --fixed-args "<rows> <cols> <pyr_height>" [--um-*]
 

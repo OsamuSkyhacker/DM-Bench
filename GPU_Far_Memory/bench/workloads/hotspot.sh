@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# 路径与环境兜底
+HERE="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$HERE/../.." && pwd)"
+WB_ROOT="${WB_ROOT:-$ROOT/workloads}"
+export WB_ROOT
+
 # hotspot 统一接口封装
 # 用法：run --mode <unmanaged|um> --gpu <id> --fixed-args "<rows_cols> <pyr_height> <sim_time> <temp_file> <power_file> <out_file>" [--um-*]
 

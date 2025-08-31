@@ -2,7 +2,7 @@ gpu:
   id: 0                 # 默认 GPU ID（可在 plan.yaml 覆盖）
   task_overhead_mb: 251 # O：每个进程固定开销
   global_task_mb: 3     # F_task：GPU有任务即存在的全局开销
-  free_adjust_mb: 0     # 对 Free0 的修正量（开发者可配置）：实际可用空闲 ≈ Free0 - free_adjust_mb
+  free_adjust_mb: 10     # 对 Free0 的修正量（开发者可配置）：实际可用空闲 ≈ Free0 - free_adjust_mb
 
 workloads:
   bfs:

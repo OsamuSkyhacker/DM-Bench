@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# 路径与环境兜底
+HERE="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$HERE/../.." && pwd)"
+WB_ROOT="${WB_ROOT:-$ROOT/workloads}"
+export WB_ROOT
+
 # 统一外部接口：
 #   bfs.sh run --mode <unmanaged|um> --gpu <id> [--input <path>] \
 #              [--um-ab <gpuX|cpu|none>] [--um-pl <gpuX|cpu|none>] \

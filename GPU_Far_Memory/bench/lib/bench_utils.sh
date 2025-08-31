@@ -24,15 +24,70 @@ debug_log() {
 grab_ms() {
   local cmd="$1"
   debug_log "exec: $cmd"
-  ${SHELL:-/bin/bash} -lc "$cmd" | grep -Eo '[0-9]+\.[0-9]+ ms' | awk '{print $1}' || true
+  ${SHELL:-/bin/bash} -lc "$cmd" | grep -Eo '([0-9]+(\.[0-9]+)?) ms' | awk '{print $1}' || true
 }
 
 # 运行命令并将全部输出追加到日志，同时抽取 ms 值
-run_and_capture_ms() { # <cmd_string> <log_file>
+run_and_capture_ms() { # <cmd_string> <log_file> [capture_file]
   local cmd="$1"; shift
-  local log="$1"
+  local log="$1"; shift || true
+  local capture_file="${1:-}"
   debug_log "exec(logged): $cmd -> $log"
-  ${SHELL:-/bin/bash} -lc "$cmd" 2>&1 | tee -a "$log" | grep -Eo '[0-9]+\.[0-9]+ ms' | awk '{print $1}' || true
+  printf "[time] %s\n" "$(date -Ins)" >> "$log"
+  printf "[cmd ] %s\n" "$cmd" >> "$log"
+  # 执行命令到临时文件，执行完再解析（避免管道与回显干扰）
+  local tmp out ms ret lines matchline xtrace_log xtrace_fd_used
+  if [[ -n "$capture_file" ]]; then
+    tmp="$capture_file"
+  else
+    tmp="$(mktemp -t bench_out.XXXXXX)"
+  fi
+  set +e
+  xtrace_fd_used=0
+  if [[ "${BENCH_TRACE:-0}" == "1" ]]; then
+    xtrace_log="${log%.log}.xtrace.log"
+    exec 9> "$xtrace_log"
+    export BASH_XTRACEFD=9
+    xtrace_fd_used=1
+    set -x
+  fi
+  eval "$cmd" >"$tmp" 2>&1
+  ret=$?
+  if [[ $xtrace_fd_used -eq 1 ]]; then
+    set +x
+    exec 9>&-
+    unset BASH_XTRACEFD
+    printf "[xtrace] %s\n" "$xtrace_log" >> "$log"
+  fi
+  set -e
+  out="$(cat "$tmp")"
+  printf "%s\n" "$out" >> "$log"
+  lines=$(wc -l < "$tmp" | awk '{print $1}')
+  printf "[exit ] %s\n" "$ret" >> "$log"
+  printf "[lines] %s\n" "$lines" >> "$log"
+  # 预览前 5 行
+  sed -n '1,5p' "$tmp" | sed 's/^/[out ] /' >> "$log"
+  # 匹配到的时间行
+  matchline=$(grep -Eo '([0-9]+(\.[0-9]+)?) (ms|s|sec|seconds)' "$tmp" | tail -n1 || true)
+  if [[ -n "${matchline:-}" ]]; then printf "[match] %s\n" "$matchline" >> "$log"; fi
+  # 提取 ms 数值
+  ms=$(grep -Eo '([0-9]+(\.[0-9]+)?) ms' "$tmp" | awk '{print $1}' | tail -n1 || true)
+  if [[ -z "${ms:-}" ]]; then
+    # 尝试以秒为单位的输出，转换为 ms
+    local sec
+    sec=$(grep -Eo '([0-9]+(\.[0-9]+)?) (s|sec|seconds)' "$tmp" | awk '{print $1}' | tail -n1 || true)
+    if [[ -n "${sec:-}" ]]; then
+      ms=$(awk -v s="$sec" 'BEGIN{printf "%.3f", s*1000.0}')
+    fi
+  fi
+  if [[ -n "${ms:-}" ]]; then
+    printf "[result] %s ms\n" "$ms" >> "$log"
+  else
+    printf "[result] NA\n" >> "$log"
+  fi
+  # 保留临时文件，便于排查（日志中记录路径）
+  printf "[tmp ] %s\n" "$tmp" >> "$log"
+  echo "$ms"
 }
 
 # 简单 CSV 写入

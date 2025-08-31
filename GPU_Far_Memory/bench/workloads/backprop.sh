@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# 路径与环境兜底
+HERE="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$HERE/../.." && pwd)"
+WB_ROOT="${WB_ROOT:-$ROOT/workloads}"
+export WB_ROOT
+
 # backprop 真实 CLI 封装
 # 用法同一：run --mode <unmanaged|um> --gpu <id> [--fixed-args "IN HID"] [--um-*]
 
@@ -25,7 +31,7 @@ run() {
 
   # 默认固定参数（与 configs 对齐）：IN HID
   if [[ -z "$fixed_args" ]]; then
-    fixed_args="1048560 2048"
+    fixed_args="1048560 1280"
   fi
 
   local exe
@@ -47,9 +53,9 @@ run() {
     echo "unsupported"; exit 3
   fi
 
-  out=("$(${cmd[@]} 2>&1 || true)")
+  out=$("${cmd[@]}" 2>&1 || true)
   # 统一解析：匹配 "X[.Y] (ms|s|sec|seconds)"，转换为毫秒
-  match=$(printf "%s\n" "${out[@]}" | grep -Eo '([0-9]+(\.[0-9]+)?) (ms|s|sec|seconds)' | head -n1 || true)
+  match=$(printf "%s\n" "$out" | grep -Eo '([0-9]+(\.[0-9]+)?) (ms|s|sec|seconds)' | tail -n1 || true)
   if [[ -n "${match:-}" ]]; then
     val=$(printf "%s" "$match" | awk '{print $1}')
     unit=$(printf "%s" "$match" | awk '{print $2}')

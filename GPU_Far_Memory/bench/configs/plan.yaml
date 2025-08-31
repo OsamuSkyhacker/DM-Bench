@@ -4,9 +4,9 @@ nodes:
   remote: {membind: 1, cpunodebind: 0}
   pmem:   {membind: 2, cpunodebind: 0}
 
-ratios: [1.5]
-workloads: [backprop]
-modes: [unmanaged, um]
+ratios: [0.3, 0.7, 1.0, 1.5, 2.0]
+workloads: [backprop] # backprop, bfs, fdtd2d, hotspot, nw, pathfinder
+modes: [unmanaged, um] # unmanaged, um
 
 um_profiles:
   - name: um_base
@@ -16,14 +16,17 @@ um_profiles:
     rm: none
   - name: um_pf
     pf: true
-  - name: um_ab
+    ab: none
+    pl: none
+    rm: none
+  - name: um_ab_gpu0_pl_cpu
+    pf: false
     ab: gpu0
-  - name: um_pl_cpu
     pl: cpu
-  - name: um_rm
+    rm: none 
+  - name: um_rm_gpu0
+    pf: false
+    ab: none
+    pl: none
     rm: gpu0
-
-# ratios: [0.3]
-# workloads: [backprop]
-# modes: [unmanaged]
 

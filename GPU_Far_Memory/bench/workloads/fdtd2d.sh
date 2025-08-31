@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# 路径与环境兜底
+HERE="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$HERE/../.." && pwd)"
+WB_ROOT="${WB_ROOT:-$ROOT/workloads}"
+export WB_ROOT
+
 # fdtd2d 统一接口封装
 # 用法：run --mode <unmanaged|um> --gpu <id> [--um-ab <gpuX|cpu|none>] [--um-pl <gpuX|cpu|none>] [--um-rm <gpuX|cpu|none>] [--um-pf]
 

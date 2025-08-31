@@ -1,3 +1,5 @@
+## GPU Far Memory Microbench
+
 ### Introduction
 microbench provides two types of CUDA memcpy microbenchmarks: bandwidth and latency. It covers Host↔Device as well as Device↔Device, supports two host memory modes—pageable and pinned (including write-combined)—and can be combined with numactl via external scripts for NUMA binding. All results are emitted as CSV for convenient visualization and comparison.
 
