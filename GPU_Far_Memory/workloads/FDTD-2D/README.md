@@ -75,10 +75,10 @@ Ez(i,j) \leftarrow Ez(i,j) + \frac{\Delta t}{\varepsilon} \cdot \left[\frac{Hy(i
 ## Run
 
 ### Managed
-- Executable: `Managed/main`
+- Executable: `Managed/fdtd2d`
 - Usage:
   ```bash
-  ./main [AB dev|cpu] [RM dev|cpu] [PL dev|cpu] [PF dev|cpu]
+  ./fdtd2d [AB dev|cpu] [RM dev|cpu] [PL dev|cpu] [PF dev|cpu]
   ```
 - UM parameter notes (independent and combinable):
   - `AB dev|cpu`: `cudaMemAdviseSetAccessedBy` specifies which device/CPU will access the region
@@ -88,17 +88,17 @@ Ez(i,j) \leftarrow Ez(i,j) + \frac{\Delta t}{\varepsilon} \cdot \left[\frac{Hy(i
 - Examples:
   ```bash
   # Prefer GPU0 residency and prefetch to GPU0 (single stream)
-  ./main PL 0 PF 0
+  ./fdtd2d PL 0 PF 0
 
   # Mark read-mostly and accessed by CPU; no prefetch
-  ./main RM cpu AB cpu
+  ./fdtd2d RM cpu AB cpu
   ```
 
 ### UnManaged
-- Executable: `UnManaged/main`
+- Executable: `UnManaged/fdtd2d`
 - Usage:
   ```bash
-  ./main
+  ./fdtd2d
   ```
 
 ## Program Input

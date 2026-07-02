@@ -7,7 +7,8 @@ start_hog() { # <hog_bin> <gpu_id> <hog_mb>
   local hog_mb="$1"
   local hog_gb
   hog_gb=$(awk -v m="$hog_mb" 'BEGIN{printf "%.3f", m/1024.0}')
-  nohup "$hog_bin" "$hog_gb" "$gpu_id" >"/tmp/hog.${gpu_id}.log" 2>&1 &
+  # PCI_BUS_ID 保证 hog 与负载（CUDA_VISIBLE_DEVICES）、nvidia-smi 使用同一套 GPU 编号
+  nohup env CUDA_DEVICE_ORDER=PCI_BUS_ID "$hog_bin" "$hog_gb" "$gpu_id" >"/tmp/hog.${gpu_id}.log" 2>&1 &
   echo $!
 }
 
@@ -35,12 +36,18 @@ wait_hog_ready() { # <gpu_id> <timeout_sec>
   local log="/tmp/hog.${gpu_id}.log"
   local t=0
   while [[ $t -lt $timeout ]]; do
-    if [[ -f "$log" ]] && grep -q "Actually allocated" "$log"; then
-      return 0
+    if [[ -f "$log" ]]; then
+      if grep -q "Actually allocated" "$log"; then
+        return 0
+      fi
+      # hog 分配不足/设备错误时会打印失败信息并退出，不能视为就绪
+      if grep -Eq "Allocation failed|cudaSetDevice.*failed" "$log"; then
+        return 1
+      fi
     fi
     sleep 1; t=$((t+1))
   done
-  return 0
+  return 1
 }
 
 

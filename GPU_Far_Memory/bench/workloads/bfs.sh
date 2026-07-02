@@ -14,6 +14,17 @@ export WB_ROOT
 
 usage() { echo "usage: $0 run --mode <unmanaged|um> --gpu <id> [--input <path>] [--um-...]"; }
 
+# 将 UM 目标设备 (cpu|gpuN) 映射为程序内设备号。
+# 负载进程经 CUDA_VISIBLE_DEVICES 绑定到单卡后，程序内可见的 GPU 编号恒为 0；
+# 指向其他物理卡的 gpuN 不受支持，回退为当前卡并告警。
+map_dev() {
+  case "$1" in
+    cpu) echo cpu ;;
+    "gpu${gpu}") echo 0 ;;
+    *) echo "[warn] um target '$1' != gpu${gpu}, mapping to current GPU" >&2; echo 0 ;;
+  esac
+}
+
 run() {
   local mode="" gpu="" input=""; local ab="none" pl="none" rm="none" pf=0
   while [[ $# -gt 0 ]]; do
@@ -30,25 +41,29 @@ run() {
   done
   [[ -z "$mode" || -z "$gpu" ]] && { usage; exit 2; }
 
+  # 将负载绑定到目标 GPU（编号与 nvidia-smi 一致），绑定后程序内设备号恒为 0
+  export CUDA_DEVICE_ORDER=PCI_BUS_ID
+  export CUDA_VISIBLE_DEVICES="${gpu}"
+
   local exe
   if [[ "$mode" == "unmanaged" ]]; then
     exe="${WB_ROOT}/BFS/UnManaged/bfs"
     [[ -z "$input" ]] && input="${WB_ROOT}/BFS/bfs_data/graph16M.txt"
-    cmd=("$exe" "$input" DEV "$gpu")
+    cmd=("$exe" "$input" DEV 0)
   elif [[ "$mode" == "um" ]]; then
     exe="${WB_ROOT}/BFS/Managed/bfs"
     [[ -z "$input" ]] && input="${WB_ROOT}/BFS/bfs_data/graph16M.txt"
-    cmd=("$exe" "$input" DEV "$gpu")
-    [[ "$ab" != "none" ]] && cmd+=(AB "${ab#gpu}")
-    [[ "$pl" != "none" ]] && cmd+=(PL "$pl")
-    [[ "$rm" != "none" ]] && cmd+=(RM "${rm#gpu}")
-    [[ $pf -eq 1 ]] && cmd+=(PF "${gpu}")
+    cmd=("$exe" "$input" DEV 0)
+    [[ "$ab" != "none" ]] && cmd+=(AB "$(map_dev "$ab")")
+    [[ "$pl" != "none" ]] && cmd+=(PL "$(map_dev "$pl")")
+    [[ "$rm" != "none" ]] && cmd+=(RM "$(map_dev "$rm")")
+    [[ $pf -eq 1 ]] && cmd+=(PF 0)
     # streams 为编译期开关，这里忽略
   else
     echo "unsupported"; exit 3
   fi
 
-  out=("$(${cmd[@]} 2>&1 || true)")
+  out=("$("${cmd[@]}" 2>&1 || true)")
   match=$(printf "%s\n" "${out[@]}" | grep -Eo '([0-9]+(\.[0-9]+)?) (ms|s|sec|seconds)' | head -n1 || true)
   if [[ -n "${match:-}" ]]; then
     val=$(printf "%s" "$match" | awk '{print $1}')

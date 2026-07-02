@@ -41,13 +41,14 @@ init(int argc, char** argv)
                 printf("Usage: dynproc row_len col_len pyramid_height\n");
                 exit(0);
         }
-	data = new int[rows*cols];
+	/* 用 size_t 计算元素数，避免 rows*cols 的 int 溢出 */
+	data = new int[(size_t)rows * (size_t)cols];
 
 	wall = new int*[rows];
 
 	for(int n=0; n<rows; n++)
 
-		wall[n]=data+cols*n;
+		wall[n]=data+(size_t)cols*(size_t)n;
 
 	result = new int[cols];
 
@@ -167,8 +168,8 @@ __global__ void dynproc_kernel(
                   int right = prev[E];
                   int shortest = MIN(left, up);
                   shortest = MIN(shortest, right);
-                  int index = cols*(startStep+i)+xidx;
-                  result[tx] = shortest + gpuWall[index];
+                  long long indexWall = (long long)cols * (long long)(startStep + i) + (long long)xidx;
+                  result[tx] = shortest + gpuWall[indexWall];
 	
             }
             __syncthreads();
@@ -236,13 +237,14 @@ void run(int argc, char** argv)
 	pyramid_height, cols, borderCols, BLOCK_SIZE, blockCols, smallBlockCol);
 	
     int *gpuWall, *gpuResult[2];
-    int size = rows*cols;
+    /* wall 元素数用 size_t，避免 rows*cols 的 int 溢出 */
+    size_t numWall = (size_t)rows * (size_t)cols - (size_t)cols;
 
     cudaMalloc((void**)&gpuResult[0], sizeof(int)*cols);
     cudaMalloc((void**)&gpuResult[1], sizeof(int)*cols);
     cudaMemcpy(gpuResult[0], data, sizeof(int)*cols, cudaMemcpyHostToDevice);
-    cudaMalloc((void**)&gpuWall, sizeof(int)*(size-cols));
-    cudaMemcpy(gpuWall, data+cols, sizeof(int)*(size-cols), cudaMemcpyHostToDevice);
+    cudaMalloc((void**)&gpuWall, sizeof(int)*numWall);
+    cudaMemcpy(gpuWall, data+cols, sizeof(int)*numWall, cudaMemcpyHostToDevice);
 
 
     int final_ret = calc_path(gpuWall, gpuResult, rows, cols, \

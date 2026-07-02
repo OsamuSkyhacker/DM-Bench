@@ -113,7 +113,7 @@ void
 fatal(char *s)
 {
 	fprintf(stderr, "error: %s\n", s);
-
+	exit(1);
 }
 
 #define IN_RANGE(x, min, max)   ((x)>=(min) && (x)<=(max))
@@ -262,7 +262,8 @@ void run(int argc, char** argv)
     printf("pyramidHeight: %d\ngridSize: [%d]\nborder:[%d]\nblockSize: %d\nblockGrid:[%d]\ntargetBlock:[%d]\n",\
 	pyramid_height, cols, borderCols, BLOCK_SIZE, blockCols, smallBlockCol);
 	
-    int size = rows*cols;
+    /* wall 元素数用 size_t，避免 rows*cols 的 int 溢出导致 advise/prefetch 静默失效 */
+    size_t numWall = (size_t)rows * (size_t)cols - (size_t)cols;
 
     // --------- Apply MemAdvise and Prefetch according to flags ---------
     auto apply_advise = [&](void* ptr, size_t bytes){
@@ -272,13 +273,13 @@ void run(int argc, char** argv)
     };
     apply_advise(gpuResult[0], sizeof(int)*cols);
     apply_advise(gpuResult[1], sizeof(int)*cols);
-    apply_advise(gpuWall,      sizeof(int)*(size-cols));
+    apply_advise(gpuWall,      sizeof(int)*numWall);
 
 #ifndef MULTISTREAM
     if(FLAG_PF){
         cudaMemPrefetchAsync(gpuResult[0], sizeof(int)*cols, DEV_PF, 0);
         cudaMemPrefetchAsync(gpuResult[1], sizeof(int)*cols, DEV_PF, 0);
-        cudaMemPrefetchAsync(gpuWall,      sizeof(int)*(size-cols), DEV_PF, 0);
+        cudaMemPrefetchAsync(gpuWall,      sizeof(int)*numWall, DEV_PF, 0);
         cudaDeviceSynchronize();
     }
 #endif
@@ -288,7 +289,7 @@ void run(int argc, char** argv)
     cudaStream_t stream2; cudaStreamCreate(&stream2);
     if(FLAG_PF){
         cudaMemPrefetchAsync( gpuResult[0], sizeof(int)*cols, DEV_PF, stream1);
-        cudaMemPrefetchAsync( gpuWall,      sizeof(int)*(size-cols), DEV_PF, stream2);
+        cudaMemPrefetchAsync( gpuWall,      sizeof(int)*numWall, DEV_PF, stream2);
     }
 #endif
 

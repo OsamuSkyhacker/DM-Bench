@@ -327,7 +327,13 @@ for wl in "${workloads[@]}"; do
     x_mb=$(awk -v g="$x" 'BEGIN{printf "%d", g*1024.0 + 0.5}')
     debug_log "ratio=$r hog_gb=$x hog_mb=$x_mb"
     HOG_BIN="$WB_ROOT/DummyCudaMalloc/gpu_mem_hog"
-    pid=""; if [[ "$x_mb" != "0" ]]; then pid=$(start_hog "$HOG_BIN" "$gpu_id" "$x_mb"); wait_hog_ready "$gpu_id" 5 || true; fi
+    pid=""
+    if [[ "$x_mb" != "0" ]]; then
+      pid=$(start_hog "$HOG_BIN" "$gpu_id" "$x_mb")
+      if ! wait_hog_ready "$gpu_id" 30; then
+        warn "hog not ready for ratio=$r (see /tmp/hog.${gpu_id}.log); results of this ratio may be invalid"
+      fi
+    fi
 
     for tag in "${node_tags[@]}"; do
       membind="${nodes_membind[$tag]:-}"

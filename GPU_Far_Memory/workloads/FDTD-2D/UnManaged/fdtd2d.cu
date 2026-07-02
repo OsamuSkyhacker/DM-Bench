@@ -219,8 +219,6 @@ void fdtdCuda(DATA_TYPE* _fict_, DATA_TYPE* ex, DATA_TYPE* ey, DATA_TYPE* hz, DA
 
 int main()
 {
-    double t_start = wall_time();
-
 	DATA_TYPE* _fict_;
 	DATA_TYPE* ex;
 	DATA_TYPE* ey;
@@ -234,6 +232,10 @@ int main()
 	hz_outputFromGpu = (DATA_TYPE*)malloc(NX*NY*sizeof(DATA_TYPE));
 
 	init_arrays(_fict_, ex, ey, hz);
+
+	/* 与 Managed 版对齐：计时从 host 数据初始化完成后开始，
+	   覆盖设备分配 + H2D + kernel + D2H + 结果落盘 */
+	double t_start = wall_time();
 
 	//GPU_argv_init();
 	fdtdCuda(_fict_, ex, ey, hz, hz_outputFromGpu);

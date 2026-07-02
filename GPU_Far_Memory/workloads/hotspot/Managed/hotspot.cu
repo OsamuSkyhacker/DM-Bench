@@ -45,10 +45,10 @@ void run(int argc, char** argv);
 
 
 void 
-fatal(char *s)
+fatal(const char *s)
 {
 	fprintf(stderr, "error: %s\n", s);
-
+	exit(1);
 }
 
 static double wall_time() {
@@ -70,7 +70,7 @@ void writeoutput(float *vect, int grid_rows, int grid_cols, char *file){
 	char str[STR_SIZE];
 
 	if( (fp = fopen(file, "w" )) == 0 )
-          printf( "The file was not opened\n" );
+          fatal( "output file was not opened" );
 
 
 	for (i=0; i < grid_rows; i++) 
@@ -94,7 +94,7 @@ void readinput(float *vect, int grid_rows, int grid_cols, char *file){
 	float val;
 
 	if( (fp  = fopen(file, "r" )) ==0 )
-            printf( "The file was not opened\n" );
+            fatal( "input file was not opened" );
 
 
 	for (i=0; i <= grid_rows-1; i++) 
@@ -388,6 +388,7 @@ void run(int argc, char** argv)
 #ifndef MULTISTREAM
     if (FLAG_PF) {
         cudaMemPrefetchAsync(MatrixTemp[0], sizeof(float)*size, DEV_PF, 0);
+        cudaMemPrefetchAsync(MatrixTemp[1], sizeof(float)*size, DEV_PF, 0); // ping-pong 写目标，同样需要预取
         cudaMemPrefetchAsync(MatrixPower,  sizeof(float)*size, DEV_PF, 0);
         cudaDeviceSynchronize();
     }
@@ -398,6 +399,7 @@ void run(int argc, char** argv)
     cudaStream_t stream2; cudaStreamCreate(&stream2);
     if (FLAG_PF) {
         cudaMemPrefetchAsync(MatrixTemp[0], sizeof(float)*size, DEV_PF, stream1);
+        cudaMemPrefetchAsync(MatrixTemp[1], sizeof(float)*size, DEV_PF, stream1); // ping-pong 写目标，同样需要预取
         cudaMemPrefetchAsync(MatrixPower,  sizeof(float)*size, DEV_PF, stream2);
     }
 #endif

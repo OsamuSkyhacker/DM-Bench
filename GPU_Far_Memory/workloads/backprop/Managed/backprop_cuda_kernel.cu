@@ -53,7 +53,7 @@ bpnn_layerforward_CUDA(float *input,          /* (in+1)            */
 }
 
 
-/**** 新 adjust-weights kernel：只把 by→bx，并改列主序索引 ****/
+/**** 新 adjust-weights kernel：与 forward 相同的二维网格划分，覆盖全部 (in+1)*(hid+1) 权重 ****/
 __global__ void
 bpnn_adjust_weights_cuda(float *delta,        /* (hid+1)         */
                          int   hid,
@@ -62,12 +62,8 @@ bpnn_adjust_weights_cuda(float *delta,        /* (hid+1)         */
                          float *w,            /* (in+1)*(hid+1)  */
                          float *oldw)         /* (in+1)*(hid+1)  */
 {
-    int bx = blockIdx.x;       /* 隐层 tile (同 forward) */
-    int tx = threadIdx.x;      /* 0..TILE_X-1 → hidden   */
-    int ty = threadIdx.y;      /* 0..TILE_Y-1 → input    */
-
-    int h_global = bx * TILE_X + tx + 1;      // hidden idx
-    int i_global = ty + 1;                    // input idx (不分块)
+    int h_global = blockIdx.x * TILE_X + threadIdx.x + 1;   // hidden idx ∈ [1..hid]
+    int i_global = blockIdx.y * TILE_Y + threadIdx.y + 1;   // input  idx ∈ [1..in]
 
     if (h_global > hid || i_global > in) return;
 
@@ -79,9 +75,9 @@ bpnn_adjust_weights_cuda(float *delta,        /* (hid+1)         */
     w[idx]    += dw;
     oldw[idx]  = dw;
 
-    /* 处理偏置项（输入 0）—— 只在一个线程里做 */
-    if (i_global == 1 && ty == 0 && tx == 0 && bx == 0) {
-        long b_idx = h_global;                // 行 0 的位置
+    /* 偏置行（行 0，ly[0]=1.0）：每个 hidden 列仅由 blockIdx.y==0 且 ty==0 的线程更新一次 */
+    if (blockIdx.y == 0 && threadIdx.y == 0) {
+        long b_idx = h_global;                // 行 0 中该 hidden 列的位置
         float dwb  = ETA * delta[h_global] + MOMENTUM * oldw[b_idx];
         w[b_idx]   += dwb;
         oldw[b_idx] = dwb;
